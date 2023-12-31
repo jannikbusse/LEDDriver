@@ -5,8 +5,8 @@
 //t0l 0.85
 //t1l0.45
 //res above 50 
-static int _PIN_NUM = 0;
-static int _NUM_LEDS = 10;
+static uint8_t  _PIN_NUM = 0;
+static int      _NUM_LEDS = 10;
     
 struct lRGB
 {
@@ -18,69 +18,83 @@ struct lRGB
 
 lRGB* _leds;
 
-inline void write0H()
+template<uint8_t BIT> 
+inline void writeNBitOne(uint8_t b)
 {
+    switch((b >> (7-BIT)) & ( 0b01))
+    {
+        case 1:
+        writeOne();
+    break;
+        case 0:
+        writeZero();
+    break;
+    }
+}
+
+inline void writeOne()
+{
+    bitSet(PORTD, 6);
     asm volatile (
     "nop" "\n\t" // 1 cycle
     "nop" "\n\t" // 1 cycle
     "nop" "\n\t" // 1 cycle
     "nop" "\n\t" // 1 cycle
     "nop" "\n\t" // 1 cycle
+    "nop" "\n\t" // 1 cycle
+    "nop" "\n\t" // 1 cycle
+    "nop" "\n\t" // 1 cycle
+    "nop" "\n\t" // 1 cycle
+    "nop" "\n\t" // 1 cycle
+    "nop" "\n\t" // 1 cycle
+    "nop" "\n\t" // 1 cycle
+    "nop" "\n\t" // 1 cycle
+    "nop" "\n\t" // 1 cycle
+    );
+
+    bitClear(PORTD, 6);
+    //PORTD &= ~(1<<_PIN_NUM);
+    asm volatile (
     //"nop" "\n\t" // 1 cycle
-  );
+    //"nop" "\n\t" // 1 cycle
+    "nop" "\n\t" // 1 cycle
+    "nop" "\n\t" // 1 cycle
+    "nop" "\n\t" // 1 cycle
+    "nop" "\n\t" // 1 cycle
+    "nop" "\n\t" // 1 cycle
+    //////////////"nop" "\n\t" // 1 cycle
+    );
+
 }
 
-inline void write1H()
+inline void writeZero()
 {
     asm volatile (
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-  );
-}
+    "sbi %0, %[bit]\n\t"
+    "nop        \n\t" // 1 cycle
+    "nop        \n\t" // 1 cycle
+    "nop        \n\t" // 1 cycle
+    "nop        \n\t" // 1 cycle
+    "nop        \n\t" // 1 cycle
+    "cbi %0, %[bit]\n\t"
+   // "nop        \n\t" // 1 cycle
+   // "nop        \n\t" // 1 cycle
+   // "nop        \n\t" // 1 cycle
+   // "nop        \n\t" // 1 cycle
+   // "nop        \n\t" // 1 cycle
+   // "nop        \n\t" // 1 cycle
+   // "nop        \n\t" // 1 cycle
+   // "nop        \n\t" // 1 cycle
+   // "nop        \n\t" // 1 cycle
+   // "nop        \n\t" // 1 cycle
+   // "nop        \n\t" // 1 cycle
+   // "nop        \n\t" // 1 cycle
+   // "nop        \n\t" // 1 cycle
+    //////////////"nop" "\n\t" // 1 cycle
+     : : "I" (_SFR_IO_ADDR(PORTD)), [bit]"I" (6)
+     );
 
-inline void write0L()
-{
-    asm volatile (
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-  );
 }
-
-inline void write1L()
-{
-    asm volatile (
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-    "nop" "\n\t" // 1 cycle
-  );
-}
-
 
 inline void setBit()
 {
@@ -92,8 +106,7 @@ inline void dropBit()
     PORTD &= ~(1<<_PIN_NUM);
 }
 
-namespace loLED
-{
+
 
    
     int init(int pinNumber, int ledCount, lRGB* leds)
@@ -111,75 +124,42 @@ namespace loLED
 
 
 
-    int writeLEDs()
+    volatile int writeLEDs()
     {
         noInterrupts();
-        dropBit();
-        PORTD &= ~(1<<_PIN_NUM);
-        delayMicroseconds(300);
-        for(int l = 0; l < _NUM_LEDS+10; l++)
+        bitClear(PORTD, _PIN_NUM);
+        delayMicroseconds(1000);
+        for(int l = 0; l < _NUM_LEDS; l++)
         {
-            //
-            /*for(bool* i = (bool*)_leds; i < (bool*)_leds + 24; i ++)
-            {
-                switch(*i)
-                {
-                case 1:
-                    setBit();
-                    write1H(); 
-                    dropBit();
-                    write1L();
-                    setBit();
-                break;
-                
-                case 0:
-                    setBit();
-                    write0H(); 
-                    dropBit();
-                    write0L();
-                    setBit();
-                break;
-                }
-                
-            }
-            */
-            for(int i=0; i < 24; i ++)
-            {
-                    setBit();
-                    asm volatile (
-                    "nop" "\n\t" // 1 cycle
-                    "nop" "\n\t" // 1 cycle
-                    "nop" "\n\t" // 1 cycle
-                    "nop" "\n\t" // 1 cycle
-                    "nop" "\n\t" // 1 cycle
-                    "nop" "\n\t" // 1 cycle
-                    );
-                    PORTD &= ~(1<<_PIN_NUM);
-                    asm volatile (
-                    //"nop" "\n\t" // 1 cycle
-                    //"nop" "\n\t" // 1 cycle
-                    "nop" "\n\t" // 1 cycle
-                    "nop" "\n\t" // 1 cycle
-                    "nop" "\n\t" // 1 cycle
-                    "nop" "\n\t" // 1 cycle
-                    "nop" "\n\t" // 1 cycle
-                    "nop" "\n\t" // 1 cycle
-                    "nop" "\n\t" // 1 cycle
-                    "nop" "\n\t" // 1 cycle
-                    "nop" "\n\t" // 1 cycle
-                    "nop" "\n\t" // 1 cycle
-                    "nop" "\n\t" // 1 cycle
-                    "nop" "\n\t" // 1 cycle
-                    "nop" "\n\t" // 1 cycle
-                    //////////////"nop" "\n\t" // 1 cycle
-                    );
-            }
-            setBit();
-        }
+            
+        writeNBitOne<0>(0);
+        writeNBitOne<0>(0);
+        writeNBitOne<0>(0);
+        writeNBitOne<0>(0);
+        writeNBitOne<0>(0);
+        writeNBitOne<0>(0);
+        writeNBitOne<0>(0);
+        writeNBitOne<0>(0);
+        writeNBitOne<0>(0);
+        writeNBitOne<0>(0);
+        writeNBitOne<0>(0);
+        writeNBitOne<0>(0);
+        writeNBitOne<0>(0);
+        writeNBitOne<0>(0);
+        writeNBitOne<0>(0);
+        writeNBitOne<0>(0);
+        writeNBitOne<0>(0);
+        writeNBitOne<0>(0);
+        writeNBitOne<0>(0);
+        writeNBitOne<0>(0);
+        writeNBitOne<0>(0);
+        writeNBitOne<0>(0);
+        writeNBitOne<0>(0);
+        writeNBitOne<0>(0);
 
         interrupts();
     }
-
-
-
 }
+
+
+
