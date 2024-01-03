@@ -9,6 +9,7 @@ lRGB leds[NUM_LEDS];
 void setup()
 {
     Serial.begin(9600);
+
     for(int i = 0; i < NUM_LEDS; i++)
     {
         led[i] = CRGB(255,255,255);

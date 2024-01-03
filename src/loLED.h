@@ -18,23 +18,11 @@ struct lRGB
 
 lRGB* _leds;
 
-template<uint8_t BIT> 
-inline void writeNBitOne(uint8_t b)
-{
-    switch((b >> (7-BIT)) & ( 0b01))
-    {
-        case 1:
-        writeOne();
-    break;
-        case 0:
-        writeZero();
-    break;
-    }
-}
+
 
 inline void writeOne()
 {
-    bitSet(PORTD, 6);
+    bitSet(PORTD,_PIN_NUM );
     asm volatile (
     "nop" "\n\t" // 1 cycle
     "nop" "\n\t" // 1 cycle
@@ -52,7 +40,7 @@ inline void writeOne()
     "nop" "\n\t" // 1 cycle
     );
 
-    bitClear(PORTD, 6);
+    bitClear(PORTD, _PIN_NUM);
     //PORTD &= ~(1<<_PIN_NUM);
     asm volatile (
     //"nop" "\n\t" // 1 cycle
@@ -91,9 +79,23 @@ inline void writeZero()
    // "nop        \n\t" // 1 cycle
    // "nop        \n\t" // 1 cycle
     //////////////"nop" "\n\t" // 1 cycle
-     : : "I" (_SFR_IO_ADDR(PORTD)), [bit]"I" (6)
+         : : "I" (_SFR_IO_ADDR(PORTD)), [bit]"I" (_PIN_NUM)
      );
 
+}
+
+template<uint8_t BIT> 
+inline void writeNBitOne(uint8_t b)
+{
+    switch((b >> (7-BIT)) & ( 0b01))
+    {
+        case 1:
+        writeOne();
+    break;
+        case 0:
+        writeZero();
+    break;
+    }
 }
 
 inline void setBit()
