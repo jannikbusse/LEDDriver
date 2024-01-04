@@ -188,7 +188,7 @@ inline void dropBit()
     }
      interrupts();
 
-     Serial.println(_leds[0].r);
+    
 }
 
 

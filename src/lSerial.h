@@ -5,6 +5,15 @@
 unsigned int _baudrate = 9600;
 unsigned long _wait_duration = 0; //this is in us
 
+char serialBuffer[256];
+uint8_t bufPos = 0;
+uint8_t idx = 0;
+uint8_t head = 0;
+uint8_t available = 0;
+bool lastBit = 1;
+bool currentTransition = 0;
+
+
 
 template<uint8_t BIT>
 inline __attribute__((always_inline)) void sWriteNBit(const uint8_t b)
@@ -25,7 +34,62 @@ int lSInit(unsigned int baudrate)
     _baudrate = baudrate;
     _wait_duration = 1000000/baudrate -1;
     PORTD = PORTD | 1 << 1;
+    PORTD = PORTD & 0b11111110;
+
+    cli();
+    //set timer2 interrupt at 8kHz
+    TCCR2A = 0;// set entire TCCR2A register to 0
+    TCCR2B = 0;// same for TCCR2B
+    TCNT2  = 0;//initialize counter value to 0
+    // set compare match register for 8khz increments
+    OCR2A = 211;// = (16*10^6) / (8000*8) - 1 (must be <256)
+    // turn on CTC mode
+    TCCR2A |= (1 << WGM21);
+    // Set CS21 bit for 8 prescaler
+    TCCR2B |= (1 << CS21);   
+    // enable timer compare interrupt
+    TIMSK2 |= (1 << OCIE2A);
+    sei();
 }
+
+ISR(TIMER2_COMPA_vect){//timer1 interrupt 8kHz toggles pin 9
+    bool bit = PIND & 0b00000001;
+    switch (bit)
+    {
+    case 0:
+        if(!currentTransition)
+        {
+            currentTransition != currentTransition;
+        }
+        break;
+    
+    case 1:
+        if(currentTransition && idx > 7)
+        {
+            idx = 0;
+            currentTransition = 0;
+            available ++;
+            bufPos ++;
+        }
+        break;
+    }
+    if(currentTransition)
+    {
+        serialBuffer[bufPos] |= bit << (idx); 
+        idx ++;
+    }
+}
+
+int readByte(char &r)
+{
+    if(!available)
+        return -1;
+    r = serialBuffer[head];
+    head ++;
+    available --;
+    return 1;
+}
+
 
 
 inline __attribute__((always_inline)) void writeHigh()
@@ -37,7 +101,7 @@ inline __attribute__((always_inline)) void writeLow()
     PORTD = PORTD & ~(1 << 1);
 }
 
-void writeChar(char c)
+void writeChar(const char c)
 {
     writeLow();
     delayMicroseconds(_wait_duration+3);

@@ -46,10 +46,16 @@ void loop()
 {
     delay(16);
     writeLEDs();
-    //leds[0] = CRGB::White; FastLED.show(); delay(3000);
-	//leds[0] = CRGB::Black; FastLED.show(); delay(3000);
-    //offset += 0.1f;
-    //FastLED.show();   
     writeChararray("hahaha dies ist ein test");    
     //Serial.println("test");
+    //char r;
+    //if(!readByte(r) == 1)
+    //{
+    //    writeChar(r);
+    //}
+   // writeChar(serialBuffer[0]);
+   //if(Serial.available() > 0)
+   //{
+   //     Serial.println(Serial.read());
+   //}
 }
