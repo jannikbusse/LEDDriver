@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <FastLED.h>
+#include "lSerial.h"
 #include "loLED.h"
 #define NUM_LEDS 3
 #define DATA_PIN 6
@@ -8,9 +9,12 @@ CRGB led[NUM_LEDS];
 lRGB leds[NUM_LEDS]; 
 void setup()
 {
-    Serial.begin(9600);
 
+
+    DDRD = DDRD | ( 1 << 1) ;
     FastLED.addLeds<NEOPIXEL, DATA_PIN>(led, NUM_LEDS);  // GRB ordering is assumed
+    lSInit(9600);
+    //Serial.begin(9600);
     init(DATA_PIN, NUM_LEDS, leds);
     leds[0].r = 255;
     leds[0].g = 0;
@@ -45,6 +49,7 @@ void loop()
     //leds[0] = CRGB::White; FastLED.show(); delay(3000);
 	//leds[0] = CRGB::Black; FastLED.show(); delay(3000);
     //offset += 0.1f;
-    //FastLED.show();
-    Serial.println("hallo");
+    //FastLED.show();   
+    writeChararray("hahaha dies ist ein test");    
+    //Serial.println("test");
 }

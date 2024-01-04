@@ -133,7 +133,6 @@ inline void dropBit()
         _NUM_LEDS   =  ledCount;
         DDRD        = DDRD | ( 1 <<_PIN_NUM) ;
         _leds       = leds;    
-        Serial.println("Init loLED");
         return 0;
     }
 
