@@ -13,6 +13,7 @@ uint8_t available = 0;
 bool lastBit = 1;
 bool currentTransition = 0;
 
+bool readLineState = 0;
 
 
 template<uint8_t BIT>
@@ -29,12 +30,22 @@ inline __attribute__((always_inline)) void sWriteNBit(const uint8_t b)
     }
 }
 
+inline __attribute__((always_inline)) void writeHigh()
+{
+    PORTD = PORTD | 1 << 1;
+}
+inline __attribute__((always_inline)) void writeLow()
+{
+    PORTD = PORTD & ~(1 << 1);
+}
+
+
 int lSInit(unsigned int baudrate)
 {
     _baudrate = baudrate;
     _wait_duration = 1000000/baudrate -1;
-    PORTD = PORTD | 1 << 1;
-    PORTD = PORTD & 0b11111110;
+    DDRD = DDRD | 1 << 1;
+    DDRD = DDRD & 0b11111110;
 
     cli();
     //set timer2 interrupt at 8kHz
@@ -49,40 +60,49 @@ int lSInit(unsigned int baudrate)
     TCCR2B |= (1 << CS21);   
     // enable timer compare interrupt
     TIMSK2 |= (1 << OCIE2A);
+
+    //hardware interupt
+    PCICR |= 0b00000100;
+    PCMSK2 |= 0b00000001;
+    readLineState = PIND & 0b00000001;
+    writeHigh();
     sei();
 }
 
-ISR(TIMER2_COMPA_vect){//timer1 interrupt 8kHz toggles pin 9
-    bool bit = PIND & 0b00000001;
-    switch (bit)
+ISR (PCINT2_vect)
+{
+    if(!currentTransition && ((PIND & 0b00000001) == 0))
     {
-    case 0:
-        if(!currentTransition)
-        {
-            currentTransition != currentTransition;
-        }
-        break;
-    
-    case 1:
-        if(currentTransition && idx > 7)
-        {
-            idx = 0;
-            currentTransition = 0;
-            available ++;
-            bufPos ++;
-        }
-        break;
+        TCNT2  = 213;
+        currentTransition = true;
     }
-    if(currentTransition)
+ 
+}
+
+ISR(TIMER2_COMPA_vect){//timer1 interrupt 8kHz toggles pin 9
+    uint8_t bit = PIND & 0b00000001;
+  
+    
+    if(currentTransition && idx > 7)
     {
+        idx = 0;
+        currentTransition = 0;
+        available ++;
+        bufPos ++;
+    }
+
+    else if(currentTransition)
+    {
+        serialBuffer[bufPos] &= ~(1 << (idx)); 
         serialBuffer[bufPos] |= bit << (idx); 
         idx ++;
+
     }
 }
 
 int readByte(char &r)
 {
-    if(!available)
+    if(available == 0)
         return -1;
     r = serialBuffer[head];
     head ++;
@@ -91,15 +111,6 @@ int readByte(char &r)
 }
 
 
-
-inline __attribute__((always_inline)) void writeHigh()
-{
-    PORTD = PORTD | 1 << 1;
-}
-inline __attribute__((always_inline)) void writeLow()
-{
-    PORTD = PORTD & ~(1 << 1);
-}
 
 void writeChar(const char c)
 {

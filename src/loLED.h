@@ -140,20 +140,20 @@ inline void dropBit()
 
     volatile int writeLEDs()
     {
-        noInterrupts();
+
         bitClear(PORTD, _PIN_NUM);
-        delayMicroseconds(1000);
+        delayMicroseconds(700);
+
         //uint8_t r = 0b11100010;
         uint8_t r = 0b00000000;
         uint8_t g = 0b00000000;
         uint8_t b = 0b00000000;
+        noInterrupts();
 
         high_mask = PORTD | ( 1 <<_PIN_NUM) ;
         low_mask = PORTD & ~( 1 <<_PIN_NUM) ;
         lRGB* led = &_leds[0];
         lRGB* endptr = &_leds[_NUM_LEDS];
-
-        
 
         while(led != endptr)
         {

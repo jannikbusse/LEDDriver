@@ -44,15 +44,16 @@ void setup()
 float offset = .0;
 void loop()
 {
-    delay(16);
+    delay(128);
     writeLEDs();
-    writeChararray("hahaha dies ist ein test");    
+    //writeChararray("hahaha dies ist ein test");    
     //Serial.println("test");
-    //char r;
-    //if(!readByte(r) == 1)
-    //{
-    //    writeChar(r);
-    //}
+    char r;
+
+    while(readByte(r) == 1)
+    {
+        writeChar(r);
+    }
    // writeChar(serialBuffer[0]);
    //if(Serial.available() > 0)
    //{
